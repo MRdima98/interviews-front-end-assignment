@@ -32,5 +32,5 @@ The server will start on `http://localhost:8080`.
 
 ## API Specification
 
-The file [RecibeBook](./openapi.yaml) contains the API specification in OpenAPI format.
+fhe file [RecibeBook](./openapi.yaml) contains the API specification in OpenAPI format.
 You can view it and try using the [Swagger Editor](https://editor.swagger.io/).
