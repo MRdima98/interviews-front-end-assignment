@@ -1,18 +1,20 @@
 import '../App.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
-import { faChevronDown } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faChevronDown, faStar } from '@fortawesome/free-solid-svg-icons'
 import { useEffect, useState } from 'react';
-import { Difficulties, Recipe } from './FetchIntefaces';
+import { Comment, Cuisine, Diet, Difficultie, Recipe } from './FetchInterfaces';
 
 
 const BASE_URL = 'http://localhost:8080'
 
-function Search() {
+function Search({ goBack }: any) {
   const [recipes, setRecipes] = useState<Recipe[] | null>(null)
-  const [difficulties, setDifficulties] = useState<Difficulties[] | null>(null)
+  const [difficulties, setDifficulties] = useState<Difficultie[] | null>(null)
   const [pages, setPages] = useState<number>(1)
   const [currentPage, setCurrentPage] = useState<number>(1)
+  const [diets, setDiets] = useState<Diet[] | null>(null)
+  const [cuisines, setCuisines] = useState<Cuisine[] | null>(null)
+  const [comments, setComments] = useState<Comment[] | null>(null)
 
   useEffect(() => {
     fetchPages(pages, setPages)
@@ -24,14 +26,17 @@ function Search() {
 
   useEffect(() => {
     fetchDifficulties(setDifficulties)
+    fetchDiets(setDiets)
+    fetchCuisines(setCuisines)
+    fetchComments(setComments)
   }, [])
 
   return (
     <div className='h-screen w-screen'>
-      {getNavbar()}
+      {getNavbar(goBack)}
       <div className='flex flex-row'>
-        {getAside()}
-        {getMain(recipes, difficulties, pages, setCurrentPage)}
+        {getAside(goBack)}
+        {getMain(recipes, difficulties, pages, setCurrentPage, diets, cuisines, comments)}
       </div >
       <footer>
         footer
@@ -45,7 +50,6 @@ function fetchPages(pages: number, setPages: Function) {
     try {
       const response = await fetch(BASE_URL + '/recipes?_page=' + pages);  // Replace with your API endpoint
       const json = await response.json();
-      console.log(pages)
       if (json.length != 0) {
         setPages(pages + 1)
       }
@@ -82,6 +86,45 @@ function fetchDifficulties(setDifficulties: Function) {
   fetchData();
 }
 
+function fetchCuisines(setCuisines: Function) {
+  const fetchData = async () => {
+    try {
+      const response = await fetch(BASE_URL + '/cuisines');  // Replace with your API endpoint
+      const json = await response.json();
+      setCuisines(json);
+    } catch (err) {
+    } finally {
+    }
+  };
+  fetchData();
+}
+
+function fetchDiets(setDiets: Function) {
+  const fetchData = async () => {
+    try {
+      const response = await fetch(BASE_URL + '/diets');  // Replace with your API endpoint
+      const json = await response.json();
+      setDiets(json);
+    } catch (err) {
+    } finally {
+    }
+  };
+  fetchData();
+}
+
+function fetchComments(setComments: Function) {
+  const fetchData = async () => {
+    try {
+      const response = await fetch(BASE_URL + '/comments');  // Replace with your API endpoint
+      const json = await response.json();
+      setComments(json);
+    } catch (err) {
+    } finally {
+    }
+  };
+  fetchData();
+}
+
 function chooseCurrentPage(pageNum: number, setCurrentPage: Function) {
   return (event: React.MouseEvent) => {
     setCurrentPage(pageNum)
@@ -90,20 +133,20 @@ function chooseCurrentPage(pageNum: number, setCurrentPage: Function) {
   }
 }
 
-function getNavbar() {
+function getNavbar(goBack: any) {
   return (
     <nav className='flex flex-row justify-between items-center h-20 shadow-md'>
       <div className='flex flex-row gap-10 items-center ml-14'>
-        <h1 className='text-3xl'>
+        <h1 className='text-3xl cursor-pointer' onClick={goBack}>
           RecipeBoo
         </h1>
-        <span className='text-xl'>
+        <span className='text-xl cursor-pointer'>
           Main
         </span>
-        <span className='text-xl'>
+        <span className='text-xl cursor-pointer'>
           Cuisine
         </span>
-        <span className='text-xl'>
+        <span className='text-xl cursor-pointer'>
           Dietary
         </span>
       </div>
@@ -117,11 +160,13 @@ function getNavbar() {
   )
 }
 
-function getAside() {
+function getAside(goBack: any) {
   return (
     <aside className='w-1/4 shadow-md'>
       <div className='flex flex-col items-start gap-4 ml-14'>
-        <FontAwesomeIcon icon={faArrowLeft} className='self-start mt-10 size-5' />
+        <button onClick={goBack}>
+          <FontAwesomeIcon icon={faArrowLeft} className='self-start mt-10 size-5' />
+        </button>
         <span className='text-xl'>
           Discover Recipes
         </span>
@@ -231,13 +276,14 @@ function getAside() {
   )
 }
 
-function getMain(recipes: Recipe[] | null, difficulties: Difficulties[] | null, pages: number, setCurrentPage: Function) {
+function getMain(recipes: Recipe[] | null, difficulties: Difficultie[] | null, pages: number, setCurrentPage: Function,
+  diets: Diet[] | null, cuisines: Cuisine[] | null, comments: Comment[] | null) {
   return (
     <main className='flex flex-col w-3/4 place-items-center'>
       <div className='flex flex-row justify-start w-5/6 mt-6'>
         <span>Results for</span>
       </div>
-      <div className='flex flex-row justify-between w-5/6 mt-6'>
+      <div className='flex flex-row justify-between w-5/6 '>
         <span className='text-2xl mt-2'>Recipes found for your seach criteria</span>
         <button className='outline ouline-1 outline-gray-300 rounded-full p-2 h-10'>
           Filter by
@@ -255,7 +301,10 @@ function getMain(recipes: Recipe[] | null, difficulties: Difficulties[] | null, 
                   <span className='text-xl'>
                     {recipe.name}
                   </span>
-                  <span className='flex flex-row flex-wrap w-4/6 gap-x-1.5'>
+                  <p className='flex flex-row flex-wrap w-4/6 gap-x-1.5 mt-2'>
+                    <span className='font-bold mr-1'>
+                      Ingredients:
+                    </span>
                     {recipe.ingredients.map(ingredient => (
                       <p>
                         {ingredient}
@@ -265,15 +314,43 @@ function getMain(recipes: Recipe[] | null, difficulties: Difficulties[] | null, 
                         }
                       </p>
                     ))}
-                  </span>
+                  </p>
+                  <p className='w-4/6 mt-2'>
+                    <span className='font-bold mr-1'>
+                      Steps:
+                    </span>
+                    {recipe.instructions}
+                  </p>
+                  {getComment(recipe.id, comments)}
                 </div>
               </div>
-              <div className='mt-10 mr-5 flex flex-col'>
-                <div className='h-5 outline outline-[0.9px] rounded-full p-1 flex place-items-center'>
-                  {difficulties != null ?
-                    difficulties[recipe.difficultyId - 1].name
-                    : ""
-                  }
+              <div className='mt-10 mr-8 flex flex-col'>
+                <div className='h-5 flex place-items-center justify-center'>
+                  {getRating(recipe.id, comments)}
+                </div>
+                <div className='h-5 mt-8 flex place-items-center justify-center'>
+                  <span className='outline outline-[0.9px] rounded-full p-2 '>
+                    {difficulties != null ?
+                      difficulties[recipe.difficultyId - 1].name
+                      : ""
+                    }
+                  </span>
+                </div>
+                <div className='h-5 mt-8 flex place-items-center justify-center'>
+                  <span className='outline outline-[0.9px] rounded-full p-2 '>
+                    {diets != null ?
+                      diets[recipe.dietId - 1].name
+                      : ""
+                    }
+                  </span>
+                </div>
+                <div className='h-5 mt-8 flex place-items-center justify-center'>
+                  <span className='outline outline-[0.9px] rounded-full p-2 '>
+                    {cuisines != null ?
+                      cuisines[recipe.dietId - 1].name
+                      : ""
+                    }
+                  </span>
                 </div>
               </div>
             </div>
@@ -297,6 +374,38 @@ function getMain(recipes: Recipe[] | null, difficulties: Difficulties[] | null, 
     </main>
 
   )
+}
+
+function getRating(recipeId: number, comments: Comment[] | null) {
+  let node = null
+  comments?.forEach((comment, _) => {
+    if (comment.recipeId == recipeId) {
+      node = (
+        <span className='outline outline-[0.9px] rounded-full p-2 '>
+          {comment.rating}
+          <FontAwesomeIcon icon={faStar} className='ml-1' />
+        </span>
+      )
+    }
+  })
+  return node
+}
+
+function getComment(recipeId: number, comments: Comment[] | null) {
+  let node = null
+  comments?.forEach((comment, _) => {
+    if (comment.recipeId == recipeId) {
+      node = (
+        <p className='w-4/6 mt-2'>
+          <span className='font-bold mr-1'>
+            Comments:
+          </span>
+          {comment.comment}
+        </p>
+      )
+    }
+  })
+  return node
 }
 
 export default Search;

@@ -9,6 +9,7 @@ function App() {
   const [page, setPage] = useState(Pages.Welcome);
   let content;
   let search = () => { setPage(Pages.Search) };
+  let goBack = () => { setPage(Pages.Welcome) };
 
   switch (page) {
     case Pages.Welcome: {
@@ -18,14 +19,9 @@ function App() {
     }
     case Pages.Search: {
       content =
-        <Search />
+        <Search goBack={goBack} />
       break;
     }
-      // default: {
-      // content =
-      <Welcome />
-    // break;
-    // }
   }
 
   return (
