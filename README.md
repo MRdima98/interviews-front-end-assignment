@@ -109,3 +109,5 @@ In a different shell run the frontend
 cd frontend
 npm start
 ```
+
+You can access the server at localhost:3000
