@@ -1,6 +1,6 @@
 import '../App.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faChevronDown, faStar } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faStar } from '@fortawesome/free-solid-svg-icons'
 import { useEffect, useState } from 'react';
 import { Comment, Cuisine, Diet, Difficultie, Recipe } from './FetchInterfaces';
 
@@ -15,14 +15,24 @@ function Search({ goBack }: any) {
   const [diets, setDiets] = useState<Diet[] | null>(null)
   const [cuisines, setCuisines] = useState<Cuisine[] | null>(null)
   const [comments, setComments] = useState<Comment[] | null>(null)
+  const [recipeName, setRecipeName] = useState<string>('')
+  const [filterCuisine, setFilterCuisine] = useState<string>('')
+
+  const handleRecipeName = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRecipeName(event.target.value);
+  };
+
+  const handleFilterCuisine = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setFilterCuisine(event.target.value);
+  };
 
   useEffect(() => {
-    fetchPages(pages, setPages)
-  }, [pages])
+    fetchPages(pages, setPages, recipeName)
+  }, [pages, recipeName])
 
   useEffect(() => {
-    fetchRecipes(setRecipes, currentPage);
-  }, [currentPage])
+    fetchRecipes(setRecipes, currentPage, recipeName, getCuisineName(cuisines, filterCuisine));
+  }, [currentPage, recipeName, filterCuisine])
 
   useEffect(() => {
     fetchDifficulties(setDifficulties)
@@ -32,42 +42,51 @@ function Search({ goBack }: any) {
   }, [])
 
   return (
-    <div className='h-screen w-screen'>
+    <div className='w-full'>
       {getNavbar(goBack)}
       <div className='flex flex-row'>
-        {getAside(goBack)}
+        {getAside(goBack, recipeName, handleRecipeName, filterCuisine, handleFilterCuisine)}
         {getMain(recipes, difficulties, pages, setCurrentPage, diets, cuisines, comments)}
       </div >
-      <footer>
-        footer
-      </footer>
     </div >
   );
 }
 
-function fetchPages(pages: number, setPages: Function) {
+function fetchPages(pages: number, setPages: Function, recipeName: string) {
   const fetchData = async () => {
     try {
-      const response = await fetch(BASE_URL + '/recipes?_page=' + pages);  // Replace with your API endpoint
+      let URL = BASE_URL + '/recipes?_page=' + pages;
+      if (recipeName != '') {
+        URL = URL + '&q=' + recipeName;
+      }
+      const response = await fetch(URL);  // Replace with your API endpoint
       const json = await response.json();
       if (json.length != 0) {
         setPages(pages + 1)
       }
     } catch (err) {
-    } finally {
+      console.log(err)
     }
   };
   fetchData();
 }
 
-function fetchRecipes(setRecipes: Function, currentPage: number) {
+function fetchRecipes(setRecipes: Function, currentPage: number, recipeName: string, cuisineId: number | null) {
   const fetchData = async () => {
     try {
-      const response = await fetch(BASE_URL + '/recipes?_page=' + currentPage);  // Replace with your API endpoint
+      let URL = BASE_URL + '/recipes?_page=' + currentPage;
+      if (recipeName != '') {
+        URL = URL + '&q=' + recipeName;
+      }
+      if (cuisineId != null) {
+        console.log(cuisineId)
+        URL = URL + '&cuisineId=' + cuisineId;
+      }
+      const response = await fetch(URL);  // Replace with your API endpoint
       const json = await response.json();
       setRecipes(json);
     } catch (err) {
-    } finally {
+      console.log(err)
     }
   };
   fetchData();
@@ -80,7 +99,7 @@ function fetchDifficulties(setDifficulties: Function) {
       const json = await response.json();
       setDifficulties(json);
     } catch (err) {
-    } finally {
+      console.log(err)
     }
   };
   fetchData();
@@ -93,7 +112,7 @@ function fetchCuisines(setCuisines: Function) {
       const json = await response.json();
       setCuisines(json);
     } catch (err) {
-    } finally {
+      console.log(err)
     }
   };
   fetchData();
@@ -106,7 +125,7 @@ function fetchDiets(setDiets: Function) {
       const json = await response.json();
       setDiets(json);
     } catch (err) {
-    } finally {
+      console.log(err)
     }
   };
   fetchData();
@@ -119,7 +138,7 @@ function fetchComments(setComments: Function) {
       const json = await response.json();
       setComments(json);
     } catch (err) {
-    } finally {
+      console.log(err)
     }
   };
   fetchData();
@@ -135,34 +154,20 @@ function chooseCurrentPage(pageNum: number, setCurrentPage: Function) {
 
 function getNavbar(goBack: any) {
   return (
-    <nav className='flex flex-row justify-between items-center h-20 shadow-md'>
+    <nav className='flex flex-row items-center h-20 shadow-md'>
       <div className='flex flex-row gap-10 items-center ml-14'>
         <h1 className='text-3xl cursor-pointer' onClick={goBack}>
           RecipeBoo
         </h1>
-        <span className='text-xl cursor-pointer'>
-          Main
-        </span>
-        <span className='text-xl cursor-pointer'>
-          Cuisine
-        </span>
-        <span className='text-xl cursor-pointer'>
-          Dietary
-        </span>
-      </div>
-      <div className='flex flex-row justify-around gap-10 mr-14 w-2/12'>
-        <button className='outline outline-2 rounded-full text-lg h-10 w-1/2'>Add</button>
-        <button className='bg-red-600 rounded-full text-white
-            text-lg h-10 w-1/2'>Filter</button>
       </div>
     </nav>
 
   )
 }
 
-function getAside(goBack: any) {
+function getAside(goBack: any, recipeName: string, handleRecipeName: any, filterCuisine: string, setFilterCuisine: any) {
   return (
-    <aside className='w-1/4 shadow-md'>
+    <aside className='lg:w-1/4 shadow-md w-0 lg:visible invisible'>
       <div className='flex flex-col items-start gap-4 ml-14'>
         <button onClick={goBack}>
           <FontAwesomeIcon icon={faArrowLeft} className='self-start mt-10 size-5' />
@@ -170,106 +175,15 @@ function getAside(goBack: any) {
         <span className='text-xl'>
           Discover Recipes
         </span>
-        <div>
+        <div className='w-full'>
           <label htmlFor="input">Search by name</label>
-          <input className='w-9/12 pr-4 pl-4 h-10 outline outline-gray-200 outline-1 rounded-full' type="text"
+          <input value={recipeName} onChange={handleRecipeName} className='w-9/12 pr-4 pl-4 h-10 outline outline-gray-200 outline-1 rounded-full' type="text"
             placeholder='Enter recipe name' />
         </div>
-        <div>
-          <label htmlFor="input">Select category</label>
-          <input className='w-9/12 pr-4 pl-4 h-10 outline outline-gray-200 outline-1 rounded-full' type="text"
-            placeholder='Choose category' />
-        </div>
-        <div>
+        <div className='w-full flex flex-col mb-5'>
           <label htmlFor="input">Select cuisine</label>
-          <input className='w-9/12 pr-4 pl-4 h-10 outline outline-gray-200 outline-1 rounded-full' type="text"
+          <input value={filterCuisine} onChange={setFilterCuisine} className='w-9/12 pr-4 pl-4 h-10 outline outline-gray-200 outline-1 rounded-full' type="text"
             placeholder='Choose cuisine' />
-        </div>
-        <div>
-          <label htmlFor="input">Select preference</label>
-          <input className='w-9/12 pr-4 pl-4 h-10 outline outline-gray-200 outline-1 rounded-full' type="text"
-            placeholder='Choose preference' />
-        </div>
-        <button className='bg-red-600 w-9/12 h-10 rounded-full text-white'>
-          Search
-        </button>
-      </div>
-      <hr className='mt-6' />
-      <div className='flex flex-col gap-6 mt-4 ml-14 mb-9'>
-        <div className='flex flex-col gap-2'>
-          <span className='text-xl'>Recipe filters</span>
-          <div>
-            <input type="checkbox" />
-            <span className='ml-2'>Vegetarian recipes</span>
-          </div>
-          <div>
-            <input type="checkbox" />
-            <span className='ml-2'>Low-carb recipes</span>
-          </div>
-          <div>
-            <input type="checkbox" />
-            <span className='ml-2'>Gluten-free recipes</span>
-          </div>
-          <div>
-            <input type="checkbox" />
-            <span className='ml-2'>Vegan recipes</span>
-          </div>
-        </div>
-        <div className='flex flex-col gap-2'>
-          <span className='text-xl'>Ingredient list</span>
-          <div>
-            <input type="checkbox" />
-            <span className='ml-2'>Quick and easy</span>
-          </div>
-          <div>
-            <input type="checkbox" />
-            <span className='ml-2'>Healthy choices</span>
-          </div>
-          <div>
-            <input type="checkbox" />
-            <span className='ml-2'>Family-Friendly</span>
-          </div>
-          <div>
-            <input type="checkbox" />
-            <span className='ml-2'>Special occasions</span>
-          </div>
-        </div>
-        <div className='flex flex-col gap-2'>
-          <span className='text-xl'>User reviews</span>
-          <div>
-            <input type="checkbox" />
-            <span className='ml-2'>All ratings</span>
-          </div>
-          <div>
-            <input type="checkbox" />
-            <span className='ml-2'>Five stars</span>
-          </div>
-          <div>
-            <input type="checkbox" />
-            <span className='ml-2'>Four stars</span>
-          </div>
-          <div>
-            <input type="checkbox" className='accent-red-600' />
-            <span className='ml-2 '>Begginer-Friendly</span>
-          </div>
-        </div>
-        <span className='text-xl'>Recipe difficulty</span>
-        <div className='flex flex-row gap-2 flex-wrap w-3/4'>
-          <button className='outline outline-[0.9px] outline-black h-5 p-3 rounded-full flex place-items-center'>
-            Easy
-          </button>
-          <button className='outline outline-[0.9px] outline-black h-5 p-3 rounded-full flex place-items-center'>
-            Medium
-          </button>
-          <button className='outline outline-[0.9px] outline-black h-5 p-3 rounded-full flex place-items-center'>
-            Hard
-          </button>
-          <button className='outline outline-[0.9px] outline-black h-5 p-3 rounded-full flex place-items-center'>
-            Expert
-          </button>
-          <button className='outline outline-[0.9px] outline-black h-5 p-3 rounded-full flex place-items-center'>
-            Master
-          </button>
         </div>
       </div>
     </aside>
@@ -279,25 +193,23 @@ function getAside(goBack: any) {
 function getMain(recipes: Recipe[] | null, difficulties: Difficultie[] | null, pages: number, setCurrentPage: Function,
   diets: Diet[] | null, cuisines: Cuisine[] | null, comments: Comment[] | null) {
   return (
-    <main className='flex flex-col w-3/4 place-items-center'>
+    <main className='flex flex-col place-items-center lg:w-3/4 w-full'>
       <div className='flex flex-row justify-start w-5/6 mt-6'>
         <span>Results for</span>
       </div>
-      <div className='flex flex-row justify-between w-5/6 '>
+      <div className='w-5/6'>
         <span className='text-2xl mt-2'>Recipes found for your seach criteria</span>
-        <button className='outline ouline-1 outline-gray-300 rounded-full p-2 h-10'>
-          Filter by
-          <FontAwesomeIcon icon={faChevronDown} className='ml-6' />
-        </button>
       </div>
       <div className='w-full flex flex-col place-items-center '>
-        {recipes != null
+        {recipes != null && recipes.length == 0
           ?
           recipes.map(recipe => (
             <div className='flex flex-row justify-between shadow-xl h-60 rounded-3xl mb-5 w-5/6'>
-              <div className='flex flex-row m-5 justify-between'>
-                <img src={BASE_URL + recipe.image} className='max-w-52 max-h-52 rounded-3xl' />
-                <div className='flex flex-col ml-5'>
+              <div className='flex flex-row m-5 justify-between w-4/6'>
+                <div className='w-52 h-52 flex place-items-center'>
+                  <img src={BASE_URL + recipe.image} className='max-w-52 max-h-52 rounded-3xl' />
+                </div>
+                <div className='flex flex-col ml-5 overflow-hidden'>
                   <span className='text-xl'>
                     {recipe.name}
                   </span>
@@ -315,7 +227,7 @@ function getMain(recipes: Recipe[] | null, difficulties: Difficultie[] | null, p
                       </p>
                     ))}
                   </p>
-                  <p className='w-4/6 mt-2'>
+                  <p className='w-4/6 mt-2 max-[1250px]:invisible'>
                     <span className='font-bold mr-1'>
                       Steps:
                     </span>
@@ -324,7 +236,7 @@ function getMain(recipes: Recipe[] | null, difficulties: Difficultie[] | null, p
                   {getComment(recipe.id, comments)}
                 </div>
               </div>
-              <div className='mt-10 mr-8 flex flex-col'>
+              <div className='mt-5 mr-8 flex flex-col'>
                 <div className='h-5 flex place-items-center justify-center'>
                   {getRating(recipe.id, comments)}
                 </div>
@@ -347,7 +259,7 @@ function getMain(recipes: Recipe[] | null, difficulties: Difficultie[] | null, p
                 <div className='h-5 mt-8 flex place-items-center justify-center'>
                   <span className='outline outline-[0.9px] rounded-full p-2 '>
                     {cuisines != null ?
-                      cuisines[recipe.dietId - 1].name
+                      cuisines[recipe.cuisineId - 1].name
                       : ""
                     }
                   </span>
@@ -355,7 +267,10 @@ function getMain(recipes: Recipe[] | null, difficulties: Difficultie[] | null, p
               </div>
             </div>
           ))
-          : "No dishes found"
+          :
+          <span className='mt-10'>
+            "No dishes found"
+          </span>
         }
       </div>
       <div className='flex flex-row gap-5'>
@@ -396,9 +311,9 @@ function getComment(recipeId: number, comments: Comment[] | null) {
   comments?.forEach((comment, _) => {
     if (comment.recipeId == recipeId) {
       node = (
-        <p className='w-4/6 mt-2'>
+        <p className='w-4/6 visible mt-2 max-[1250px]:invisible max-[1250px]:h-0'>
           <span className='font-bold mr-1'>
-            Comments:
+            Comment:
           </span>
           {comment.comment}
         </p>
@@ -406,6 +321,17 @@ function getComment(recipeId: number, comments: Comment[] | null) {
     }
   })
   return node
+}
+
+function getCuisineName(cuisines: Cuisine[] | null, cuisine: string): number | null {
+  let cuisineId: number | null = null
+  cuisines?.forEach((val) => {
+    if (cuisine != '' && val.name.toLowerCase().includes(cuisine.toLowerCase())) {
+      console.log(val.name)
+      cuisineId = val.id
+    }
+  })
+  return cuisineId
 }
 
 export default Search;
