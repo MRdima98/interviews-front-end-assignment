@@ -99,5 +99,13 @@ comments. Enable users to add comments and rate the recipe, displaying the avera
 comments.
 
 ## How to run
-
-...
+Run the server
+```
+cd server
+npm start
+```
+In a different shell run the frontend
+```
+cd frontend
+npm start
+```
